@@ -1,1 +1,1226 @@
+<!DOCTYPE html>
+<html lang="en">
 
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Δ — Price Analytics &amp; Forecasting</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;600&display=swap"
+        rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #FAFAF8;
+            --ink: #14171A;
+            --ink-soft: #6E6A61;
+            --ink-faint: #A6A198;
+            --accent: #2F5D50;
+            --accent-soft: #E4ECE9;
+            --down: #B3503F;
+            --down-soft: #F4E7E3;
+            --line: #E7E3D9;
+            --card: #FFFFFE;
+
+            --sans: 'Inter', sans-serif;
+            --mono: 'JetBrains Mono', monospace;
+            --ease: cubic-bezier(.2, .8, .2, 1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--ink);
+            font-family: var(--sans);
+            font-weight: 400;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
+
+        button {
+            font-family: inherit;
+            cursor: pointer;
+        }
+
+        input,
+        select {
+            font-family: inherit;
+        }
+
+        ::selection {
+            background: var(--accent);
+            color: #fff;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+
+        .wrap {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 0 32px;
+        }
+
+        /* ============ HEADER ============ */
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 50;
+            background: rgba(250, 250, 248, 0.88);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--line);
+        }
+
+        .header-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 18px 32px;
+            max-width: 1080px;
+            margin: 0 auto;
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-mark {
+            font-family: var(--mono);
+            font-size: 22px;
+            font-weight: 500;
+            color: var(--accent);
+            width: 34px;
+            height: 34px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+        }
+
+        .brand-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .brand-name {
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .brand-sub {
+            font-size: 11px;
+            color: var(--ink-faint);
+        }
+
+        #sparkline {
+            flex: 1;
+            max-width: 220px;
+            height: 32px;
+            display: none;
+        }
+
+        @media(min-width:720px) {
+            #sparkline {
+                display: block;
+            }
+        }
+
+        nav {
+            display: flex;
+            gap: 4px;
+        }
+
+        nav a {
+            font-size: 12.5px;
+            color: var(--ink-soft);
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background .18s var(--ease), color .18s var(--ease);
+        }
+
+        nav a:hover,
+        nav a:focus-visible {
+            background: var(--accent-soft);
+            color: var(--accent);
+            outline: none;
+        }
+
+        @media(max-width:640px) {
+            nav {
+                display: none;
+            }
+        }
+
+        /* ============ SECTIONS ============ */
+        main {
+            padding-bottom: 100px;
+        }
+
+        .section {
+            padding: 64px 0;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .section:last-child {
+            border-bottom: none;
+        }
+
+        .section-head {
+            display: flex;
+            align-items: baseline;
+            justify-content: space-between;
+            margin-bottom: 32px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .section-index {
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--ink-faint);
+            letter-spacing: 0.08em;
+        }
+
+        .section-title {
+            font-size: 19px;
+            font-weight: 600;
+            letter-spacing: -0.01em;
+        }
+
+        /* ============ HERO / OVERVIEW ============ */
+        .hero-row {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            gap: 48px;
+            align-items: end;
+            margin-bottom: 40px;
+        }
+
+        @media(max-width:720px) {
+            .hero-row {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+
+        .hero-number {
+            font-family: var(--mono);
+            font-size: clamp(48px, 8vw, 88px);
+            font-weight: 300;
+            letter-spacing: -0.02em;
+            line-height: 1;
+        }
+
+        .hero-label {
+            font-size: 12px;
+            color: var(--ink-soft);
+            margin-bottom: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .hero-meta {
+            display: flex;
+            gap: 22px;
+            flex-wrap: wrap;
+        }
+
+        .hero-meta-item {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+
+        .hero-meta-label {
+            font-size: 10.5px;
+            color: var(--ink-faint);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+
+        .hero-meta-value {
+            font-family: var(--mono);
+            font-size: 15px;
+        }
+
+        .hero-meta-value.up {
+            color: var(--accent);
+        }
+
+        .hero-meta-value.down {
+            color: var(--down);
+        }
+
+        .stat-strip {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 0;
+            border-top: 1px solid var(--line);
+        }
+
+        .stat {
+            padding: 18px 20px 18px 0;
+            border-right: 1px solid var(--line);
+        }
+
+        .stat:last-child {
+            border-right: none;
+        }
+
+        .stat-label {
+            font-size: 10.5px;
+            color: var(--ink-faint);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 6px;
+        }
+
+        .stat-value {
+            font-family: var(--mono);
+            font-size: 17px;
+        }
+
+        .stat-value.up {
+            color: var(--accent);
+        }
+
+        .stat-value.down {
+            color: var(--down);
+        }
+
+        .reco-line {
+            margin-top: 28px;
+            padding: 16px 20px;
+            background: var(--accent-soft);
+            border-radius: 10px;
+            font-size: 13.5px;
+            color: var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .reco-line b {
+            font-weight: 600;
+        }
+
+        /* ============ CHIP CONTROLS ============ */
+        .chip-row {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .chip {
+            font-family: var(--mono);
+            font-size: 11px;
+            letter-spacing: 0.02em;
+            padding: 6px 13px;
+            border-radius: 20px;
+            border: 1px solid var(--line);
+            background: transparent;
+            color: var(--ink-soft);
+            transition: all .18s var(--ease);
+        }
+
+        .chip.active,
+        .chip:hover {
+            background: var(--ink);
+            color: var(--bg);
+            border-color: var(--ink);
+        }
+
+        .chip:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        /* ============ CARDS / CHARTS ============ */
+        .card {
+            background: var(--card);
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            padding: 24px;
+        }
+
+        .card+.card {
+            margin-top: 20px;
+        }
+
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media(max-width:780px) {
+            .grid-2 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card-label {
+            font-size: 12px;
+            color: var(--ink-soft);
+            margin-bottom: 14px;
+        }
+
+        canvas {
+            max-width: 100%;
+        }
+
+        /* ============ TABLES ============ */
+        .table-scroll {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-family: var(--mono);
+            font-size: 12.5px;
+        }
+
+        th,
+        td {
+            padding: 11px 14px;
+            text-align: right;
+            white-space: nowrap;
+            border-bottom: 1px solid var(--line);
+        }
+
+        th:first-child,
+        td:first-child {
+            text-align: left;
+        }
+
+        thead th {
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--ink-faint);
+            font-weight: 500;
+        }
+
+        tr.best td {
+            color: var(--accent);
+            font-weight: 500;
+        }
+
+        tr.best td:first-child::after {
+            content: " ●";
+            font-size: 9px;
+            vertical-align: middle;
+        }
+
+        /* ============ PREDICT ============ */
+        .predict-grid {
+            display: grid;
+            grid-template-columns: 1.15fr 0.85fr;
+            gap: 20px;
+        }
+
+        @media(max-width:900px) {
+            .predict-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .field-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 14px;
+            margin-top: 16px;
+        }
+
+        .field label {
+            display: block;
+            font-size: 10.5px;
+            color: var(--ink-faint);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+
+        .field input,
+        .field select {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--bg);
+            font-family: var(--mono);
+            font-size: 13.5px;
+            color: var(--ink);
+            transition: border-color .18s var(--ease);
+        }
+
+        .field input:focus-visible,
+        .field select:focus-visible {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn {
+            font-family: var(--sans);
+            font-size: 13px;
+            font-weight: 500;
+            padding: 11px 20px;
+            border-radius: 8px;
+            background: var(--ink);
+            color: var(--bg);
+            border: 1px solid var(--ink);
+            transition: transform .12s var(--ease), opacity .18s var(--ease);
+        }
+
+        .btn:hover {
+            opacity: 0.82;
+        }
+
+        .btn:active {
+            transform: scale(0.97);
+        }
+
+        .btn:focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+        }
+
+        .btn.ghost {
+            background: transparent;
+            color: var(--ink);
+        }
+
+        .btn.ghost:hover {
+            background: var(--ink);
+            color: var(--bg);
+            opacity: 1;
+        }
+
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        .predict-result {
+            border: 1px solid var(--line);
+            border-radius: 14px;
+            background: var(--card);
+            padding: 26px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 10px;
+            min-height: 230px;
+        }
+
+        .predict-result .ph {
+            color: var(--ink-faint);
+            font-size: 13.5px;
+        }
+
+        .predict-result .price {
+            font-family: var(--mono);
+            font-size: 38px;
+            font-weight: 300;
+        }
+
+        .predict-result .meta {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--ink-soft);
+        }
+
+        .badge {
+            font-family: var(--mono);
+            font-size: 11px;
+            padding: 4px 11px;
+            border-radius: 20px;
+            width: fit-content;
+        }
+
+        .badge.up {
+            background: var(--accent-soft);
+            color: var(--accent);
+        }
+
+        .badge.down {
+            background: var(--down-soft);
+            color: var(--down);
+        }
+
+        .badge.flat {
+            background: var(--line);
+            color: var(--ink-soft);
+        }
+
+        /* ============ DATASET / ADMIN ============ */
+        .toolbar-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 18px;
+        }
+
+        .search-box {
+            padding: 10px 14px;
+            border: 1px solid var(--line);
+            border-radius: 8px;
+            background: var(--bg);
+            font-family: var(--mono);
+            font-size: 13px;
+            min-width: 220px;
+        }
+
+        .search-box:focus-visible {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .pager {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-family: var(--mono);
+            font-size: 12px;
+            margin-top: 16px;
+        }
+
+        .admin-row {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            align-items: flex-end;
+            margin-top: 24px;
+        }
+
+        .status-line {
+            font-family: var(--mono);
+            font-size: 12px;
+            color: var(--ink-soft);
+            margin-top: 10px;
+            min-height: 16px;
+        }
+
+        .file-field label {
+            display: block;
+            font-size: 10.5px;
+            color: var(--ink-faint);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 6px;
+        }
+
+        footer {
+            padding: 32px;
+            text-align: center;
+            font-family: var(--mono);
+            font-size: 11px;
+            color: var(--ink-faint);
+        }
+
+        .skeleton {
+            color: var(--ink-faint);
+            font-size: 12.5px;
+            padding: 20px 0;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="header-inner">
+            <div class="brand">
+                <div class="brand-mark">Δ</div>
+                <div class="brand-text">
+                    <span class="brand-name">Signal</span>
+                    <span class="brand-sub">Price analytics &amp; forecasting</span>
+                </div>
+            </div>
+            <svg id="sparkline" viewBox="0 0 220 32" preserveAspectRatio="none"></svg>
+            <nav>
+                <a href="#overview">Overview</a>
+                <a href="#chart">Chart</a>
+                <a href="#models">Models</a>
+                <a href="#predict">Predict</a>
+                <a href="#dataset">Dataset</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="wrap">
+
+        <!-- OVERVIEW -->
+        <section id="overview" class="section">
+            <div class="section-head">
+                <span class="section-index">01 — Overview</span>
+                <span class="section-title">Where things stand</span>
+            </div>
+            <div id="overviewBody">
+                <div class="skeleton">Fetching latest close…</div>
+            </div>
+        </section>
+
+        <!-- CHART -->
+        <section id="chart" class="section">
+            <div class="section-head">
+                <span class="section-index">02 — Chart</span>
+                <span class="section-title">Price &amp; moving averages</span>
+            </div>
+            <div class="card">
+                <div class="toolbar-row">
+                    <div class="chip-row" id="rangeChips">
+                        <button class="chip active" data-range="50">50d</button>
+                        <button class="chip" data-range="100">100d</button>
+                        <button class="chip" data-range="200">200d</button>
+                    </div>
+                    <div class="chip-row" id="overlayChips">
+                        <button class="chip active" data-overlay="ma7">MA7</button>
+                        <button class="chip active" data-overlay="ma30">MA30</button>
+                    </div>
+                </div>
+                <canvas id="priceChart" height="110"></canvas>
+            </div>
+            <div class="grid-2">
+                <div class="card">
+                    <p class="card-label">Volume</p>
+                    <canvas id="volumeChart" height="140"></canvas>
+                </div>
+                <div class="card">
+                    <p class="card-label">Daily return %</p>
+                    <canvas id="returnChart" height="140"></canvas>
+                </div>
+            </div>
+        </section>
+
+        <!-- MODELS -->
+        <section id="models" class="section">
+            <div class="section-head">
+                <span class="section-index">03 — Models</span>
+                <span class="section-title">Forecasting panel</span>
+            </div>
+            <div class="card">
+                <div class="table-scroll">
+                    <table id="modelsTable">
+                        <thead>
+                            <tr>
+                                <th>Model</th>
+                                <th>RMSE</th>
+                                <th>MAE</th>
+                                <th>MAPE %</th>
+                                <th>R²</th>
+                                <th>Train (s)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="modelsTbody">
+                            <tr>
+                                <td colspan="6" class="skeleton">Loading model metrics…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card">
+                <p class="card-label">Best model — predicted vs. actual (test set)</p>
+                <canvas id="predChart" height="110"></canvas>
+            </div>
+        </section>
+
+        <!-- PREDICT -->
+        <section id="predict" class="section">
+            <div class="section-head">
+                <span class="section-index">04 — Predict</span>
+                <span class="section-title">Run a forecast</span>
+            </div>
+            <div class="predict-grid">
+                <div class="card">
+                    <div class="field" style="max-width:260px;">
+                        <label for="modelSelect">Model</label>
+                        <select id="modelSelect"></select>
+                    </div>
+                    <form id="predictForm">
+                        <div class="field-grid" id="predictFields"></div>
+                        <div style="display:flex; gap:10px; margin-top:18px;">
+                            <button type="button" class="btn ghost" id="fillLatestBtn">Fill from latest row</button>
+                            <button type="submit" class="btn">Run prediction</button>
+                        </div>
+                    </form>
+                </div>
+                <div class="predict-result" id="predictResult">
+                    <p class="ph">Fill in the fields — or use "Fill from latest row" — then run a prediction.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- DATASET -->
+        <section id="dataset" class="section">
+            <div class="section-head">
+                <span class="section-index">05 — Dataset</span>
+                <span class="section-title">Ledger &amp; admin</span>
+            </div>
+            <div class="toolbar-row">
+                <input class="search-box" id="datasetSearch" placeholder="Search by date (YYYY-MM-DD)…" />
+                <div class="chip-row">
+                    <a class="btn ghost" href="/api/download/dataset">Download CSV</a>
+                    <a class="btn ghost" href="/api/download/report">Download report</a>
+                </div>
+            </div>
+            <div class="card" style="padding:8px 8px 0;">
+                <div class="table-scroll">
+                    <table id="datasetTable">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Open</th>
+                                <th>High</th>
+                                <th>Low</th>
+                                <th>Close</th>
+                                <th>Volume</th>
+                                <th>MA7</th>
+                                <th>MA30</th>
+                            </tr>
+                        </thead>
+                        <tbody id="datasetTbody">
+                            <tr>
+                                <td colspan="8" class="skeleton">Loading rows…</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="pager">
+                <button class="btn ghost" id="prevPage">← Prev</button>
+                <span id="pageInfo">Page 1</span>
+                <button class="btn ghost" id="nextPage">Next →</button>
+            </div>
+
+            <div class="admin-row">
+                <div class="file-field">
+                    <label for="uploadInput">Upload new CSV</label>
+                    <input type="file" id="uploadInput" accept=".csv" />
+                </div>
+                <button class="btn" id="uploadBtn">Upload dataset</button>
+                <button class="btn ghost" id="retrainBtn">Retrain models</button>
+            </div>
+            <div class="status-line" id="adminStatus"></div>
+        </section>
+
+    </main>
+
+    <footer>Generated locally by your own models · not investment advice</footer>
+
+    <script>
+        const FEATURE_FIELDS = [
+            { key: "Open", label: "Open" },
+            { key: "High", label: "High" },
+            { key: "Low", label: "Low" },
+            { key: "Volume", label: "Volume" },
+            { key: "MA7", label: "MA7" },
+            { key: "MA30", label: "MA30" },
+            { key: "Momentum", label: "Momentum" },
+            { key: "Volatility", label: "Volatility" },
+            { key: "DailyReturn", label: "Daily Return" },
+            { key: "Close", label: "Current close (optional)" },
+        ];
+
+        let analyticsCache = null;
+        let datasetPage = 1;
+        let datasetSearch = "";
+        let priceChart, volumeChart, returnChart, predChart;
+        let currentRange = 50;
+        let showMA7 = true, showMA30 = true;
+
+        function fmt(n, digits = 2) {
+            if (n === null || n === undefined || Number.isNaN(n)) return "—";
+            return Number(n).toLocaleString(undefined, { maximumFractionDigits: digits, minimumFractionDigits: digits });
+        }
+
+        async function fetchJSON(url, opts) {
+            const res = await fetch(url, opts);
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({ detail: res.statusText }));
+                throw new Error(body.detail || "Request failed");
+            }
+            return res.json();
+        }
+
+        /* ============ HEADER SPARKLINE ============ */
+        function drawSparkline(values) {
+            const svg = document.getElementById("sparkline");
+            if (!values || values.length < 2) return;
+            const w = 220, h = 32, pad = 3;
+            const min = Math.min(...values), max = Math.max(...values);
+            const span = (max - min) || 1;
+            const pts = values.map((v, i) => {
+                const x = pad + (i / (values.length - 1)) * (w - pad * 2);
+                const y = h - pad - ((v - min) / span) * (h - pad * 2);
+                return `${x.toFixed(1)},${y.toFixed(1)}`;
+            });
+            const up = values[values.length - 1] >= values[0];
+            const color = up ? "#2F5D50" : "#B3503F";
+            svg.innerHTML = `<polyline points="${pts.join(' ')}" fill="none" stroke="${color}" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>`;
+        }
+
+        /* ============ OVERVIEW ============ */
+        async function loadOverview() {
+            const body = document.getElementById("overviewBody");
+            try {
+                const s = await fetchJSON("/api/summary");
+                const dailyClass = s.avg_daily_return >= 0 ? "up" : "down";
+                body.innerHTML = `
+      <div class="hero-row">
+        <div>
+          <div class="hero-label">Last close</div>
+          <div class="hero-number">${fmt(s.last_close)}</div>
+        </div>
+        <div class="hero-meta">
+          <div class="hero-meta-item"><span class="hero-meta-label">Trend</span><span class="hero-meta-value">${s.trend}</span></div>
+          <div class="hero-meta-item"><span class="hero-meta-label">Avg daily return</span><span class="hero-meta-value ${dailyClass}">${fmt(s.avg_daily_return)}%</span></div>
+          <div class="hero-meta-item"><span class="hero-meta-label">Best model</span><span class="hero-meta-value">${s.best_model}</span></div>
+          <div class="hero-meta-item"><span class="hero-meta-label">RMSE</span><span class="hero-meta-value">${fmt(s.best_rmse, 3)}</span></div>
+        </div>
+      </div>
+      <div class="stat-strip">
+        <div class="stat"><div class="stat-label">MA7</div><div class="stat-value">${fmt(s.ma7)}</div></div>
+        <div class="stat"><div class="stat-label">MA30</div><div class="stat-value">${fmt(s.ma30)}</div></div>
+        <div class="stat"><div class="stat-label">Volatility</div><div class="stat-value">${fmt(s.volatility)}%</div></div>
+        <div class="stat"><div class="stat-label">Momentum</div><div class="stat-value ${s.momentum >= 0 ? 'up' : 'down'}">${fmt(s.momentum)}</div></div>
+        <div class="stat"><div class="stat-label">High / Low</div><div class="stat-value" style="font-size:14px;">${fmt(s.highest_close)} / ${fmt(s.lowest_close)}</div></div>
+        <div class="stat"><div class="stat-label">Rows</div><div class="stat-value">${s.total_rows}</div></div>
+      </div>
+      <div class="reco-line"><b>${s.recommendation}</b> — based on ${s.models_trained} trained models and current trend signals.</div>
+    `;
+            } catch (e) {
+                body.innerHTML = `<div class="skeleton">Couldn't load summary — is the dataset loaded? (${e.message})</div>`;
+            }
+        }
+
+        /* ============ CHARTS ============ */
+        function chartTheme() {
+            const cs = getComputedStyle(document.body);
+            return {
+                ink: cs.getPropertyValue('--ink').trim(),
+                accent: cs.getPropertyValue('--accent').trim(),
+                down: cs.getPropertyValue('--down').trim(),
+                line: cs.getPropertyValue('--line').trim(),
+                soft: cs.getPropertyValue('--ink-soft').trim(),
+            };
+        }
+
+        function renderPriceChart() {
+            if (!analyticsCache) return;
+            const t = chartTheme();
+            const n = currentRange;
+            const dates = analyticsCache.dates.slice(-n);
+            const close = analyticsCache.close.slice(-n);
+            const ma7 = analyticsCache.ma7.slice(-n);
+            const ma30 = analyticsCache.ma30.slice(-n);
+
+            const datasets = [
+                { label: "Close", data: close, borderColor: t.ink, backgroundColor: "transparent", borderWidth: 1.8, pointRadius: 0, tension: 0.2 }
+            ];
+            if (showMA7) datasets.push({ label: "MA7", data: ma7, borderColor: t.accent, backgroundColor: "transparent", borderWidth: 1.4, pointRadius: 0, tension: 0.2 });
+            if (showMA30) datasets.push({ label: "MA30", data: ma30, borderColor: t.down, backgroundColor: "transparent", borderWidth: 1.4, borderDash: [3, 3], pointRadius: 0, tension: 0.2 });
+
+            if (priceChart) priceChart.destroy();
+            priceChart = new Chart(document.getElementById("priceChart"), {
+                type: "line",
+                data: { labels: dates, datasets },
+                options: {
+                    responsive: true,
+                    interaction: { mode: "index", intersect: false },
+                    plugins: { legend: { labels: { font: { family: "JetBrains Mono", size: 11 }, boxWidth: 12, usePointStyle: true } } },
+                    scales: {
+                        x: { ticks: { maxTicksLimit: 8, font: { family: "JetBrains Mono", size: 10 }, color: t.soft }, grid: { color: t.line, display: false } },
+                        y: { ticks: { font: { family: "JetBrains Mono", size: 10 }, color: t.soft }, grid: { color: t.line } }
+                    }
+                }
+            });
+        }
+
+        function renderVolumeChart() {
+            if (!analyticsCache) return;
+            const t = chartTheme();
+            const n = currentRange;
+            const dates = analyticsCache.dates.slice(-n);
+            const vol = analyticsCache.volume.slice(-n);
+            if (volumeChart) volumeChart.destroy();
+            volumeChart = new Chart(document.getElementById("volumeChart"), {
+                type: "bar",
+                data: { labels: dates, datasets: [{ label: "Volume", data: vol, backgroundColor: t.accent, borderRadius: 2 }] },
+                options: {
+                    responsive: true, plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { maxTicksLimit: 6, font: { family: "JetBrains Mono", size: 9 }, color: t.soft }, grid: { display: false } },
+                        y: { ticks: { font: { family: "JetBrains Mono", size: 9 }, color: t.soft }, grid: { color: t.line } }
+                    }
+                }
+            });
+        }
+
+        function renderReturnChart() {
+            if (!analyticsCache) return;
+            const t = chartTheme();
+            const n = currentRange;
+            const dates = analyticsCache.dates.slice(-n);
+            const ret = analyticsCache.daily_return.slice(-n).map(r => r * 100);
+            if (returnChart) returnChart.destroy();
+            returnChart = new Chart(document.getElementById("returnChart"), {
+                type: "bar",
+                data: {
+                    labels: dates, datasets: [{
+                        label: "Daily return %", data: ret,
+                        backgroundColor: ret.map(r => r >= 0 ? t.accent : t.down), borderRadius: 2
+                    }]
+                },
+                options: {
+                    responsive: true, plugins: { legend: { display: false } },
+                    scales: {
+                        x: { ticks: { maxTicksLimit: 6, font: { family: "JetBrains Mono", size: 9 }, color: t.soft }, grid: { display: false } },
+                        y: { ticks: { font: { family: "JetBrains Mono", size: 9 }, color: t.soft }, grid: { color: t.line } }
+                    }
+                }
+            });
+        }
+
+        async function loadAnalytics() {
+            try {
+                analyticsCache = await fetchJSON("/api/analytics");
+                drawSparkline(analyticsCache.close.slice(-30));
+                renderPriceChart();
+                renderVolumeChart();
+                renderReturnChart();
+            } catch (e) {
+                console.error("analytics failed", e);
+            }
+        }
+
+        document.getElementById("rangeChips").addEventListener("click", (e) => {
+            const btn = e.target.closest(".chip");
+            if (!btn) return;
+            document.querySelectorAll("#rangeChips .chip").forEach(c => c.classList.remove("active"));
+            btn.classList.add("active");
+            currentRange = parseInt(btn.dataset.range, 10);
+            renderPriceChart(); renderVolumeChart(); renderReturnChart();
+        });
+        document.getElementById("overlayChips").addEventListener("click", (e) => {
+            const btn = e.target.closest(".chip");
+            if (!btn) return;
+            btn.classList.toggle("active");
+            if (btn.dataset.overlay === "ma7") showMA7 = btn.classList.contains("active");
+            if (btn.dataset.overlay === "ma30") showMA30 = btn.classList.contains("active");
+            renderPriceChart();
+        });
+
+        /* ============ MODELS ============ */
+        async function loadModels() {
+            const tbody = document.getElementById("modelsTbody");
+            const select = document.getElementById("modelSelect");
+            try {
+                const m = await fetchJSON("/api/metrics");
+                const rows = Object.entries(m.metrics);
+                tbody.innerHTML = rows.map(([name, data]) => {
+                    const met = data.metrics || {};
+                    const isBest = name === m.best_model;
+                    return `<tr class="${isBest ? 'best' : ''}">
+        <td>${name}</td>
+        <td>${fmt(met.RMSE, 3)}</td>
+        <td>${fmt(met.MAE, 3)}</td>
+        <td>${fmt(met.MAPE, 2)}</td>
+        <td>${fmt(met.R2, 4)}</td>
+        <td>${fmt(met.TrainTime, 2)}</td>
+      </tr>`;
+                }).join("") || `<tr><td colspan="6" class="skeleton">No models trained yet.</td></tr>`;
+
+                select.innerHTML = rows.map(([name]) => `<option value="${name}" ${name === m.best_model ? 'selected' : ''}>${name}${name === m.best_model ? ' (best)' : ''}</option>`).join("");
+
+                const pred = await fetchJSON("/api/predictions_chart");
+                const t = chartTheme();
+                if (predChart) predChart.destroy();
+                predChart = new Chart(document.getElementById("predChart"), {
+                    type: "line",
+                    data: {
+                        labels: pred.actuals.map((_, i) => i + 1),
+                        datasets: [
+                            { label: "Actual", data: pred.actuals, borderColor: t.ink, borderWidth: 1.8, pointRadius: 0 },
+                            { label: pred.model + " prediction", data: pred.predictions, borderColor: t.down, borderWidth: 1.4, borderDash: [3, 3], pointRadius: 0 }
+                        ]
+                    },
+                    options: {
+                        responsive: true, plugins: { legend: { labels: { font: { family: "JetBrains Mono", size: 11 }, boxWidth: 12, usePointStyle: true } } },
+                        scales: { x: { display: false }, y: { ticks: { font: { family: "JetBrains Mono", size: 10 }, color: t.soft }, grid: { color: t.line } } }
+                    }
+                });
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="6" class="skeleton">Couldn't load metrics — ${e.message}</td></tr>`;
+            }
+        }
+
+        /* ============ PREDICT FORM ============ */
+        function buildPredictFields() {
+            const wrap = document.getElementById("predictFields");
+            wrap.innerHTML = FEATURE_FIELDS.map(f => `
+    <div class="field">
+      <label for="f_${f.key}">${f.label}</label>
+      <input type="number" step="any" id="f_${f.key}" name="${f.key}" />
+    </div>
+  `).join("");
+        }
+        buildPredictFields();
+
+        document.getElementById("fillLatestBtn").addEventListener("click", async () => {
+            try {
+                const d = await fetchJSON("/api/dataset?page=1&per_page=1");
+                const total = d.total;
+                const last = await fetchJSON(`/api/dataset?page=${Math.max(1, total)}&per_page=1`);
+                const row = last.data[last.data.length - 1] || d.data[0];
+                FEATURE_FIELDS.forEach(f => {
+                    const el = document.getElementById("f_" + f.key);
+                    if (row[f.key] !== undefined) el.value = row[f.key];
+                });
+            } catch (e) {
+                alert("Couldn't load latest row: " + e.message);
+            }
+        });
+
+        document.getElementById("predictForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const resultBox = document.getElementById("predictResult");
+            resultBox.innerHTML = `<p class="ph">Running prediction…</p>`;
+            const payload = { model_name: document.getElementById("modelSelect").value };
+            let valid = true;
+            FEATURE_FIELDS.forEach(f => {
+                const val = document.getElementById("f_" + f.key).value;
+                if (f.key !== "Close") {
+                    if (val === "") { valid = false; }
+                    payload[f.key] = parseFloat(val);
+                } else if (val !== "") {
+                    payload[f.key] = parseFloat(val);
+                }
+            });
+            if (!valid) {
+                resultBox.innerHTML = `<p class="ph">Fill in all required fields (current close is optional).</p>`;
+                return;
+            }
+            try {
+                const r = await fetchJSON("/api/predict", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(payload)
+                });
+                const badgeClass = r.pct_change > 0.5 ? "up" : r.pct_change < -0.5 ? "down" : "flat";
+                resultBox.innerHTML = `
+      <span class="badge ${badgeClass}">${r.trend}</span>
+      <div class="price">${fmt(r.predicted_price)}</div>
+      <div class="meta">Model: ${r.model_used} · Change vs current close: ${fmt(r.pct_change)}% · Confidence: ${fmt(r.confidence, 1)}%</div>
+    `;
+            } catch (e) {
+                resultBox.innerHTML = `<p class="ph">Prediction failed — ${e.message}</p>`;
+            }
+        });
+
+        /* ============ DATASET TABLE ============ */
+        async function loadDataset() {
+            const tbody = document.getElementById("datasetTbody");
+            try {
+                const d = await fetchJSON(`/api/dataset?page=${datasetPage}&per_page=15&search=${encodeURIComponent(datasetSearch)}`);
+                tbody.innerHTML = d.data.map(row => `
+      <tr>
+        <td>${row.Date}</td>
+        <td>${fmt(row.Open)}</td>
+        <td>${fmt(row.High)}</td>
+        <td>${fmt(row.Low)}</td>
+        <td>${fmt(row.Close)}</td>
+        <td>${fmt(row.Volume, 0)}</td>
+        <td>${fmt(row.MA7)}</td>
+        <td>${fmt(row.MA30)}</td>
+      </tr>
+    `).join("") || `<tr><td colspan="8" class="skeleton">No rows match.</td></tr>`;
+                document.getElementById("pageInfo").textContent = `Page ${d.page} of ${d.pages || 1} · ${d.total} rows`;
+            } catch (e) {
+                tbody.innerHTML = `<tr><td colspan="8" class="skeleton">Couldn't load dataset — ${e.message}</td></tr>`;
+            }
+        }
+        document.getElementById("prevPage").addEventListener("click", () => { if (datasetPage > 1) { datasetPage--; loadDataset(); } });
+        document.getElementById("nextPage").addEventListener("click", () => { datasetPage++; loadDataset(); });
+        let searchDebounce;
+        document.getElementById("datasetSearch").addEventListener("input", (e) => {
+            clearTimeout(searchDebounce);
+            searchDebounce = setTimeout(() => {
+                datasetSearch = e.target.value;
+                datasetPage = 1;
+                loadDataset();
+            }, 350);
+        });
+
+        /* ============ ADMIN: UPLOAD / RETRAIN ============ */
+        document.getElementById("uploadBtn").addEventListener("click", async () => {
+            const input = document.getElementById("uploadInput");
+            const status = document.getElementById("adminStatus");
+            if (!input.files.length) { status.textContent = "Choose a CSV file first."; return; }
+            const fd = new FormData();
+            fd.append("file", input.files[0]);
+            status.textContent = "Uploading…";
+            try {
+                const r = await fetchJSON("/api/upload", { method: "POST", body: fd });
+                status.textContent = r.message + " Click Retrain to fit models on the new data.";
+                datasetPage = 1;
+                loadDataset();
+                loadOverview();
+                loadAnalytics();
+            } catch (e) {
+                status.textContent = "Upload failed — " + e.message;
+            }
+        });
+
+        document.getElementById("retrainBtn").addEventListener("click", async () => {
+            const status = document.getElementById("adminStatus");
+            const btn = document.getElementById("retrainBtn");
+            btn.disabled = true;
+            status.textContent = "Retraining all models — this can take a minute (LSTM included)…";
+            try {
+                const r = await fetchJSON("/api/retrain", { method: "POST" });
+                status.textContent = `Retraining complete. Best model: ${r.best_model}.`;
+                await Promise.all([loadOverview(), loadAnalytics(), loadModels()]);
+            } catch (e) {
+                status.textContent = "Retrain failed — " + e.message;
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        /* ============ INIT ============ */
+        (async function init() {
+            await Promise.all([loadOverview(), loadAnalytics(), loadModels(), loadDataset()]);
+        })();
+    </script>
+</body>
+
+</html>
