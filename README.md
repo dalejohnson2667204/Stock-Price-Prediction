@@ -6,10 +6,7 @@ interactive analytics web UI.
 
 ## Demo
 
-https://github.com/user-attachments/assets/REPLACE_WITH_YOUR_VIDEO_ASSET_ID
-
-*(Drag `stock.prediction.mp4` into this README on github.com and GitHub will replace the
-line above with a playable video link automatically.)*
+[Watch the demo video](https://github.com/dalejohnson2667204/Stock-Price-Prediction/blob/main/stock.prediction.mp4)
 
 ## Features
 
